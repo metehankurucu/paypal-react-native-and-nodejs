@@ -3,6 +3,10 @@ const router = express.Router();
 const { client: paypalClient } = require("../helpers/paypalClient");
 const paypal = require("@paypal/checkout-server-sdk");
 
+//Edit these
+const returnUrl = "http://localhost:3000/?result=true";
+const cancelUrl = "http://localhost:3000/?result=false";
+
 /* POST create an order */
 router.post("/order", async (req, res, next) => {
   try {
@@ -19,6 +23,10 @@ router.post("/order", async (req, res, next) => {
     let request = new paypal.orders.OrdersCreateRequest();
     request.requestBody({
       intent: "CAPTURE",
+      application_context: {
+        return_url: returnUrl,
+        cancel_url: cancelUrl,
+      },
       purchase_units: [
         {
           amount: {
@@ -39,10 +47,11 @@ router.post("/order", async (req, res, next) => {
     const approvalUrl = response.result.links.find(
       (data) => data.rel == "approve"
     ).href;
-    console.log(approvalUrl);
-    console.log(response.result.links);
+
     res.json({
       approvalUrl,
+      returnUrl,
+      cancelUrl,
       orderId: response.result.id,
       result: true,
     });
