@@ -1,12 +1,4 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
-
-import React from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -14,59 +6,95 @@ import {
   View,
   Text,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
 
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import { Header, Colors } from 'react-native/Libraries/NewAppScreen';
+import PaypalWebview from './src/components/PaypalWebview';
 
-const App: () => React$Node = () => {
+const App = () => {
+  const [paypalValues, setPaypalValues] = useState({
+    orderId: '',
+    approvalUrl: '',
+    returnUrl: '',
+    cancelUrl: '',
+  });
+  const [webviewVisible, setWebviewVisible] = useState(false);
+
+  const onPaypalCheckout = async () => {
+    try {
+      const response = await (await fetch(
+        'http://localhost:3000/paypal/order',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ currency_code: 'USD', value: '10' }),
+        },
+      )).json();
+
+      console.log(response);
+      if (response.result) {
+        setPaypalValues({
+          orderId: response.orderId,
+          approvalUrl: response.approvalUrl,
+          returnUrl: response.returnUrl,
+          cancelUrl: response.cancelUrl,
+        });
+        setWebviewVisible(true);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const onSuccess = async () => {
+    setWebviewVisible(false);
+    try {
+      const response = await (await fetch(
+        'http://localhost:3000/paypal/capture/' + paypalValues.orderId,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      )).json();
+
+      console.log(response);
+      if (response.result) {
+        //Payment capture success
+        console.warn('Payment Success, show to user');
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
+        <ScrollView style={styles.scrollView}>
           <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
+          <View style={styles.content}>
+            <Text style={styles.text}>PayPal Checkout</Text>
+            <Text style={styles.text}>100 USD</Text>
+            <TouchableOpacity onPress={onPaypalCheckout} style={styles.btn}>
+              <Text style={styles.btnText}>Checkout</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
+        <PaypalWebview
+          url={paypalValues.approvalUrl}
+          visible={webviewVisible}
+          onSuccess={onSuccess}
+          onCancel={() => console.log('Payment Canceled')}
+          onClose={() => setWebviewVisible(false)}
+          successUrl={paypalValues.returnUrl}
+          cancelUrl={paypalValues.cancelUrl}
+        />
       </SafeAreaView>
     </>
   );
@@ -76,38 +104,25 @@ const styles = StyleSheet.create({
   scrollView: {
     backgroundColor: Colors.lighter,
   },
-  engine: {
-    position: 'absolute',
-    right: 0,
+  content: {
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  body: {
-    backgroundColor: Colors.white,
+  btn: {
+    backgroundColor: 'tomato',
+    padding: 10,
+    marginTop: 20,
+    borderRadius: 8,
   },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  btnText: {
+    fontSize: 22,
+    fontWeight: '500',
+    color: '#fff',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
+  text: {
+    fontSize: 22,
+    margin: 5,
   },
 });
 
