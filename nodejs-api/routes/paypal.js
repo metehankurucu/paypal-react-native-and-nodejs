@@ -8,7 +8,7 @@ const returnUrl = "http://localhost:3000/?result=true";
 const cancelUrl = "http://localhost:3000/?result=false";
 
 /* POST create an order */
-router.post("/order", async (req, res, next) => {
+router.post("/orders", async (req, res, next) => {
   try {
     const { currency_code, value } = req.body;
     if (!currency_code || !value)
@@ -61,7 +61,7 @@ router.post("/order", async (req, res, next) => {
 });
 
 /* POST capture the order */
-router.post("/capture/:orderId", async (req, res, next) => {
+router.post("/orders/:orderId/capture", async (req, res, next) => {
   try {
     const { orderId } = req.params;
 

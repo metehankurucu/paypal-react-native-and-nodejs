@@ -24,7 +24,7 @@ const App = () => {
   const onPaypalCheckout = async () => {
     try {
       const response = await (await fetch(
-        'http://localhost:3000/paypal/order',
+        'http://localhost:3000/paypal/orders',
         {
           method: 'POST',
           headers: {
@@ -53,7 +53,7 @@ const App = () => {
     setWebviewVisible(false);
     try {
       const response = await (await fetch(
-        'http://localhost:3000/paypal/capture/' + paypalValues.orderId,
+        `http://localhost:3000/paypal/orders/${paypalValues.orderId}/capture/`,
         {
           method: 'POST',
           headers: {
